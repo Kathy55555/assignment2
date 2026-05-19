@@ -258,3 +258,9 @@ html, body {
   background: #667eea;
   color: white;
 }
+
+.cards.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

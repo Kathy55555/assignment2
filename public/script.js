@@ -194,10 +194,13 @@ async function fetchCards(search = "") {
 //MANAGE MODE
 function renderManage(cards) {
   cardsContainer.innerHTML = "";
-
+  cardsContainer.classList.remove("empty");
   if (!cards.length) {
-    cardsContainer.classList.add("no-cards");
-    cardsContainer.innerHTML = `<div class="center-message">No cards</div>`;
+    cardsContainer.classList.add("empty");
+
+    cardsContainer.innerHTML = `
+      <div class="center-message">No cards</div>
+    `;
     return;
   }
 
