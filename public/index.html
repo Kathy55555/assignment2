@@ -24,12 +24,20 @@
   </div>
 
   <div id="app" class="container" style="display:none;">
+<div id="adminPanel" style="display:none; margin-top:20px;">
+  <h2>Admin Panel</h2>
 
+  <button id="loadUsersBtn">View Users</button>
+  <button id="loadHistoryBtn">View All Flashcards</button>
+
+  <div id="adminOutput"></div>
+</div>
     <h1>Flashcard Learning App</h1>
 
     <div class="mode-switch">
       <button id="manageBtn" class="active-mode">Manage</button>
       <button id="studyBtn">Study</button>
+      <button id="adminBtn">Admin</button>
     </div>
 
     <div id="progress" class="progress"></div>

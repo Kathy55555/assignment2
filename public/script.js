@@ -22,7 +22,37 @@ const studyBtn = document.getElementById("studyBtn");
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
+const adminBtn = document.getElementById("adminBtn");
+const adminPanel = document.getElementById("adminPanel");
+const adminOutput = document.getElementById("adminOutput");
 
+
+document.getElementById("loadUsersBtn").addEventListener("click", async () => {
+  const res = await fetch("/api/admin/users", {
+    headers: { Authorization: "Bearer " + getToken() }
+  });
+
+  const data = await res.json();
+
+  adminOutput.innerHTML =
+    "<h3>Users</h3>" +
+    data.map(u => `<p>${u.username} - ${u.email}</p>`).join("");
+});
+
+
+document.getElementById("loadHistoryBtn").addEventListener("click", async () => {
+  const res = await fetch("/api/admin/history", {
+    headers: { Authorization: "Bearer " + getToken() }
+  });
+
+  const data = await res.json();
+
+  adminOutput.innerHTML =
+    "<h3>All Flashcards</h3>" +
+    data.map(c =>
+      `<p>${c.question} → ${c.answer}</p>`
+    ).join("");
+});
 function getToken() {
   return localStorage.getItem("token");
 }
@@ -88,25 +118,26 @@ loginBtn.addEventListener("click", async () => {
 
   const data = await res.json();
 
-  console.log("STATUS:", res.status);
-  console.log("RESPONSE:", data);
-
   if (!res.ok) {
-    alert(data.message || "Login failed");
-    return;
-  }
-
-  if (!data.token) {
-    alert("No token received");
+    alert(data.message);
     return;
   }
 
   localStorage.setItem("token", data.token);
+  localStorage.setItem("role", data.user.role);
 
-auth.style.display = "none";
-app.style.display = "block";
+  auth.style.display = "none";
+  app.style.display = "block";
 
-fetchCards();
+  const role = data.user.role;
+
+  const adminPanel = document.getElementById("adminPanel");
+
+  if (role === "admin") {
+    adminPanel.style.display = "block";
+  } else {
+    adminPanel.style.display = "none";
+  }
 
   fetchCards();
 });
@@ -255,6 +286,15 @@ studyBtn.addEventListener("click", () => {
   manageBtn.classList.remove("active-mode");
 
   fetchCards();
+});
+
+adminBtn.addEventListener("click", () => {
+  currentMode = "admin";
+
+
+  cardsContainer.innerHTML = "";
+  adminPanel.style.display = "block";
+  
 });
 
 //STUDY MODE
