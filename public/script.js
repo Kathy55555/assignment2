@@ -19,13 +19,13 @@ const addBtn = document.getElementById("addBtn");
 const manageBtn = document.getElementById("manageBtn");
 const studyBtn = document.getElementById("studyBtn");
 
-let editingId = null;
-let currentMode = "manage";
-let studyCards = [];
 const adminBtn = document.getElementById("adminBtn");
 const adminPanel = document.getElementById("adminPanel");
 const adminOutput = document.getElementById("adminOutput");
 
+let editingId = null;
+let currentMode = "manage";
+let studyCards = [];
 
 document.getElementById("loadUsersBtn").addEventListener("click", async () => {
   const res = await fetch("/api/admin/users", {
@@ -129,16 +129,10 @@ loginBtn.addEventListener("click", async () => {
   auth.style.display = "none";
   app.style.display = "block";
 
-  const role = data.user.role;
+  resetModes();
 
-  const adminPanel = document.getElementById("adminPanel");
-
-  if (role === "admin") {
-    adminPanel.style.display = "block";
-  } else {
-    adminPanel.style.display = "none";
-  }
-
+  currentMode = "manage";
+  manageBtn.classList.add("active-mode");
   fetchCards();
 });
 //FETCH CARDS
@@ -267,34 +261,48 @@ addBtn.addEventListener("click", async () => {
   fetchCards();
 });
 
-//MODE SWITCH
-manageBtn.addEventListener("click", () => {
-  currentMode = "manage";
-
+function resetModes() {
   app.classList.remove("study-mode");
-  manageBtn.classList.add("active-mode");
-  studyBtn.classList.remove("active-mode");
 
+  manageBtn.classList.remove("active-mode");
+  studyBtn.classList.remove("active-mode");
+  adminBtn.classList.remove("active-mode");
+
+  adminPanel.style.display = "none";
+}
+
+manageBtn.addEventListener("click", () => {
+  resetModes();
+
+  currentMode = "manage";
+  manageBtn.classList.add("active-mode");
+
+  app.classList.remove("admin-mode"); 
   fetchCards();
 });
 
 studyBtn.addEventListener("click", () => {
-  currentMode = "study";
+  resetModes();
 
-  app.classList.add("study-mode");
+  currentMode = "study";
   studyBtn.classList.add("active-mode");
-  manageBtn.classList.remove("active-mode");
+
+  app.classList.remove("admin-mode"); 
+  app.classList.add("study-mode");
 
   fetchCards();
 });
 
 adminBtn.addEventListener("click", () => {
+  resetModes();
+
   currentMode = "admin";
+  adminBtn.classList.add("active-mode");
 
-
+  app.classList.add("admin-mode");
   cardsContainer.innerHTML = "";
-  adminPanel.style.display = "block";
-  
+
+  adminPanel.style.display = "flex";
 });
 
 //STUDY MODE
