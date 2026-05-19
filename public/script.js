@@ -27,7 +27,13 @@ let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
 
-document.getElementById("loadUsersBtn").addEventListener("click", async () => {
+function bindAdminButtons() {
+  const usersBtn = document.getElementById("loadUsersBtn");
+  const historyBtn = document.getElementById("loadHistoryBtn");
+
+  if (!usersBtn || !historyBtn) return;
+
+usersBtn.onclick = async () => {
   const res = await fetch("/api/admin/users", {
     headers: { Authorization: "Bearer " + getToken() }
   });
@@ -37,22 +43,24 @@ document.getElementById("loadUsersBtn").addEventListener("click", async () => {
   adminOutput.innerHTML =
     "<h3>Users</h3>" +
     data.map(u => `<p>${u.username} - ${u.email}</p>`).join("");
-});
+};
 
+  historyBtn.onclick = async () => {
+    try {
+      const res = await fetch("/api/admin/history", {
+        headers: { Authorization: "Bearer " + getToken() }
+      });
 
-document.getElementById("loadHistoryBtn").addEventListener("click", async () => {
-  const res = await fetch("/api/admin/history", {
-    headers: { Authorization: "Bearer " + getToken() }
-  });
+      const data = await res.json();
 
-  const data = await res.json();
-
-  adminOutput.innerHTML =
-    "<h3>All Flashcards</h3>" +
-    data.map(c =>
-      `<p>${c.question} → ${c.answer}</p>`
-    ).join("");
-});
+      adminOutput.innerHTML =
+        "<h3>All Flashcards</h3>" +
+        data.map(c => `<p>${c.question} → ${c.answer}</p>`).join("");
+    } catch (err) {
+      adminOutput.innerHTML = "<p>Failed to load history</p>";
+    }
+  };
+}
 function getToken() {
   return localStorage.getItem("token");
 }
@@ -134,6 +142,7 @@ loginBtn.addEventListener("click", async () => {
   currentMode = "manage";
   manageBtn.classList.add("active-mode");
   fetchCards();
+  bindAdminButtons();
 });
 //FETCH CARDS
 async function fetchCards(search = "") {
@@ -303,6 +312,8 @@ adminBtn.addEventListener("click", () => {
   cardsContainer.innerHTML = "";
 
   adminPanel.style.display = "flex";
+  
+  bindAdminButtons();
 });
 
 //STUDY MODE
