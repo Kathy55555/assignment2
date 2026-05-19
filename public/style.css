@@ -11,7 +11,28 @@ body {
   justify-content: center;
   align-items: center;
 }
+.auth-box {
+  width: 300px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
+.auth-box input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.auth-box button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: white;
+  cursor: pointer;
+}
 .container {
   background: white;
   width: 95%;

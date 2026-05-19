@@ -9,9 +9,23 @@ const progressDisplay = document.getElementById("progress");
 
 const container = document.querySelector(".container");
 
+const authBox = document.getElementById("auth");
+
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+
+const regUsername = document.getElementById("regUsername");
+const regEmail = document.getElementById("regEmail");
+const regPassword = document.getElementById("regPassword");
+
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+
+
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
+
 
 async function fetchCards() {
   const res = await fetch("/api/flashcards");
@@ -23,6 +37,39 @@ async function fetchCards() {
     startStudyMode(cards);
   }
 }
+
+loginBtn.addEventListener("click", async () => {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: loginEmail.value,
+      password: loginPassword.value
+    })
+  });
+
+  const data = await res.json();
+
+  localStorage.setItem("token", data.token);
+
+  authBox.style.display = "none";
+
+  fetchCards();
+});
+
+registerBtn.addEventListener("click", async () => {
+  await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: regUsername.value,
+      email: regEmail.value,
+      password: regPassword.value
+    })
+  });
+
+  alert("Registered! Now login.");
+});
 
 // Manage mode
 function renderManage(cards) {
