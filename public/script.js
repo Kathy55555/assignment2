@@ -27,6 +27,10 @@ let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
 
+function getRole() {
+  return localStorage.getItem("role");
+}
+
 function bindAdminButtons() {
   const usersBtn = document.getElementById("loadUsersBtn");
   const historyBtn = document.getElementById("loadHistoryBtn");
@@ -65,6 +69,19 @@ function getToken() {
   return localStorage.getItem("token");
 }
 
+function applyRoleUI() {
+  const role = getRole();
+  const adminBtn = document.getElementById("adminBtn");
+
+  if (!adminBtn) return;
+
+  if (role !== "admin") {
+    adminBtn.style.display = "none";
+  } else {
+    adminBtn.style.display = "inline-block";
+  }
+}
+
 function setState(loggedIn) {
   auth.classList.toggle("hidden", loggedIn);
   app.classList.toggle("hidden", !loggedIn);
@@ -83,6 +100,8 @@ function initApp() {
 
   auth.classList.add("hidden");
   app.classList.remove("hidden");
+
+  applyRoleUI();
 
   fetchCards();
 }
@@ -133,6 +152,8 @@ loginBtn.addEventListener("click", async () => {
 
   localStorage.setItem("token", data.token);
   localStorage.setItem("role", data.user.role);
+
+  applyRoleUI();
 
   auth.style.display = "none";
   app.style.display = "block";
@@ -312,7 +333,7 @@ adminBtn.addEventListener("click", () => {
   cardsContainer.innerHTML = "";
 
   adminPanel.style.display = "flex";
-  
+
   bindAdminButtons();
 });
 
