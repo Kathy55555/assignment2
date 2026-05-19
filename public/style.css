@@ -265,3 +265,15 @@ html, body {
   align-items: center;
 }
 
+.search-bar {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+.search-bar:focus {
+  border-color: #667eea;
+}
