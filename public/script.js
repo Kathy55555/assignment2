@@ -1,15 +1,5 @@
-const cardsContainer = document.getElementById("cards");
-const questionInput = document.getElementById("question");
-const answerInput = document.getElementById("answer");
-const addBtn = document.getElementById("addBtn");
-
-const manageBtn = document.getElementById("manageBtn");
-const studyBtn = document.getElementById("studyBtn");
-const progressDisplay = document.getElementById("progress");
-
-const container = document.querySelector(".container");
-
-const authBox = document.getElementById("auth");
+const auth = document.getElementById("auth");
+const app = document.getElementById("app");
 
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
@@ -21,23 +11,71 @@ const regPassword = document.getElementById("regPassword");
 const loginBtn = document.getElementById("loginBtn");
 const registerBtn = document.getElementById("registerBtn");
 
+const cardsContainer = document.getElementById("cards");
+const questionInput = document.getElementById("question");
+const answerInput = document.getElementById("answer");
+const addBtn = document.getElementById("addBtn");
+
+const manageBtn = document.getElementById("manageBtn");
+const studyBtn = document.getElementById("studyBtn");
 
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
 
-
-async function fetchCards() {
-  const res = await fetch("/api/flashcards");
-  const cards = await res.json();
-
-  if (currentMode === "manage") {
-    renderManage(cards);
-  } else {
-    startStudyMode(cards);
-  }
+function getToken() {
+  return localStorage.getItem("token");
 }
 
+function setState(loggedIn) {
+  auth.classList.toggle("hidden", loggedIn);
+  app.classList.toggle("hidden", !loggedIn);
+
+  if (loggedIn) fetchCards();
+}
+
+function initApp() {
+  const token = localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === "null") {
+    auth.classList.remove("hidden");
+    app.classList.add("hidden");
+    return;
+  }
+
+  auth.classList.add("hidden");
+  app.classList.remove("hidden");
+
+  fetchCards();
+}
+
+document.addEventListener("DOMContentLoaded", initApp);
+
+//REGISTER
+registerBtn.addEventListener("click", async () => {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: regUsername.value,
+      email: regEmail.value,
+      password: regPassword.value
+    })
+  });
+
+  const data = await res.json();
+
+  console.log("REGISTER:", data);
+
+  if (!res.ok) {
+    alert(data.message || "Register failed");
+    return;
+  }
+
+  alert("Registered successfully");
+});
+
+//LOGIN
 loginBtn.addEventListener("click", async () => {
   const res = await fetch("/api/auth/login", {
     method: "POST",
@@ -50,39 +88,63 @@ loginBtn.addEventListener("click", async () => {
 
   const data = await res.json();
 
+  console.log("STATUS:", res.status);
+  console.log("RESPONSE:", data);
+
+  if (!res.ok) {
+    alert(data.message || "Login failed");
+    return;
+  }
+
+  if (!data.token) {
+    alert("No token received");
+    return;
+  }
+
   localStorage.setItem("token", data.token);
 
-  authBox.style.display = "none";
+auth.style.display = "none";
+app.style.display = "block";
+
+fetchCards();
 
   fetchCards();
 });
+//FETCH CARDS
+async function fetchCards(search = "") {
+  const token = getToken();
 
-registerBtn.addEventListener("click", async () => {
-  await fetch("/api/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: regUsername.value,
-      email: regEmail.value,
-      password: regPassword.value
-    })
+  if (!token) {
+    setState(false);
+    return;
+  }
+
+  const res = await fetch(`/api/flashcards?search=${search}`, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
   });
 
-  alert("Registered! Now login.");
-});
+  if (!res.ok) {
+    showAuth();
+    return;
+  }
 
-// Manage mode
+  const cards = await res.json();
+
+  if (currentMode === "manage") renderManage(cards);
+  else startStudyMode(cards);
+}
+
+//MANAGE MODE
 function renderManage(cards) {
   cardsContainer.innerHTML = "";
-  progressDisplay.textContent = "";
 
-if (cards.length === 0) {
-  cardsContainer.classList.add("no-cards"); 
-  cardsContainer.innerHTML = `<div class="center-message">No cards.</div>`;
-  return;
-} else {
-  cardsContainer.classList.remove("no-cards"); 
-}
+  if (!cards.length) {
+    cardsContainer.classList.add("no-cards");
+    cardsContainer.innerHTML = `<div class="center-message">No cards</div>`;
+    return;
+  }
 
   cards.forEach(card => {
     const wrapper = document.createElement("div");
@@ -100,17 +162,27 @@ if (cards.length === 0) {
     `;
 
     wrapper.addEventListener("click", e => {
-      if (e.target.tagName !== "BUTTON") wrapper.classList.toggle("flipped");
+      if (e.target.tagName !== "BUTTON") {
+        wrapper.classList.toggle("flipped");
+      }
     });
 
     wrapper.querySelector(".delete-btn").addEventListener("click", async e => {
       e.stopPropagation();
-      await fetch(`/api/flashcards/${card._id}`, { method: "DELETE" });
+
+      await fetch(`/api/flashcards/${card._id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + getToken()
+        }
+      });
+
       fetchCards();
     });
 
     wrapper.querySelector(".edit-btn").addEventListener("click", e => {
       e.stopPropagation();
+
       questionInput.value = card.question;
       answerInput.value = card.answer;
       editingId = card._id;
@@ -121,100 +193,118 @@ if (cards.length === 0) {
   });
 }
 
-//add or update card
+//ADD / UPDATE
 addBtn.addEventListener("click", async () => {
   const question = questionInput.value.trim();
   const answer = answerInput.value.trim();
 
-  if (!question || !answer) return alert("Both fields are required");
+  if (!question || !answer) return alert("Fill both fields");
+
+  const token = getToken();
+
+  if (!token) {
+    setState(false);
+    return;
+  }
 
   if (editingId) {
     await fetch(`/api/flashcards/${editingId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ question, answer })
     });
+
     editingId = null;
     addBtn.textContent = "Add Flashcard";
   } else {
     await fetch("/api/flashcards", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ question, answer })
     });
   }
 
   questionInput.value = "";
   answerInput.value = "";
+
   fetchCards();
 });
 
-//Study mode
-function startStudyMode(cards) {
-  cardsContainer.innerHTML = "";
-  progressDisplay.textContent = "";
-
-  if (cards.length === 0) {
-    cardsContainer.innerHTML = `<div class="center-message">No cards.</div>`;
-    return;
-  }
-
-  studyCards = [...cards];
-  showStudyCard();
-}
-
-function showStudyCard() {
-  cardsContainer.innerHTML = "";
-
-  if (studyCards.length === 0) {
-    cardsContainer.innerHTML = `<div class="center-message">🎉 All cards completed!</div>`;
-    return;
-  }
-
-  progressDisplay.textContent = `${studyCards.length} card(s) remaining`;
-
-  const card = studyCards[0];
-  const wrapper = document.createElement("div");
-  wrapper.className = "card";
-
-  wrapper.innerHTML = `
-    <div class="card-inner">
-      <div class="card-front">${card.question}</div>
-      <div class="card-back">${card.answer}</div>
-    </div>
-    <div class="study-actions">
-      <button class="complete-btn">Mark as Known ✓</button>
-    </div>
-  `;
-
-  wrapper.addEventListener("click", e => {
-    if (e.target.tagName !== "BUTTON") wrapper.classList.toggle("flipped");
-  });
-
-  wrapper.querySelector(".complete-btn").addEventListener("click", e => {
-    e.stopPropagation();
-    studyCards.shift();
-    showStudyCard();
-  });
-
-  cardsContainer.appendChild(wrapper);
-}
-
-// Switch modes between study and manage
+//MODE SWITCH
 manageBtn.addEventListener("click", () => {
   currentMode = "manage";
-  container.classList.remove("study-mode");
+
+  app.classList.remove("study-mode");
   manageBtn.classList.add("active-mode");
   studyBtn.classList.remove("active-mode");
+
   fetchCards();
 });
 
 studyBtn.addEventListener("click", () => {
   currentMode = "study";
-  container.classList.add("study-mode");
+
+  app.classList.add("study-mode");
   studyBtn.classList.add("active-mode");
   manageBtn.classList.remove("active-mode");
+
   fetchCards();
 });
 
-fetchCards();
+//STUDY MODE
+function startStudyMode(cards) {
+  cardsContainer.innerHTML = "";
+
+  if (!cards.length) {
+    cardsContainer.classList.add("no-cards");
+    cardsContainer.innerHTML = `<div class="center-message">No cards</div>`;
+    return;
+  }
+
+  studyCards = [...cards];
+  showCard();
+}
+
+function showCard() {
+  cardsContainer.innerHTML = "";
+
+  if (studyCards.length === 0) {
+    const msg = document.createElement("div");
+    msg.className = "center-message";
+    msg.textContent = "All cards completed!";
+    cardsContainer.appendChild(msg);
+    return;
+  }
+
+  const card = studyCards[0];
+
+  const div = document.createElement("div");
+  div.className = "card";
+
+  div.innerHTML = `
+    <div class="card-inner">
+      <div class="card-front">${card.question}</div>
+      <div class="card-back">${card.answer}</div>
+    </div>
+    <button class="complete">Done</button>
+  `;
+
+  div.addEventListener("click", (e) => {
+    if (e.target.classList.contains("complete")) return;
+    div.classList.toggle("flipped");
+  });
+
+  div.querySelector(".complete").addEventListener("click", (e) => {
+    e.stopPropagation();
+    studyCards.shift();
+    showCard();
+  });
+
+  cardsContainer.appendChild(div);
+}
