@@ -76,13 +76,11 @@ usersBtn.onclick = async () => {
     }
 
     adminOutput.innerHTML =
-      "<h3>Study History</h3>" +
+      "<h3>All Flashcards Completed</h3>" +
       data.map(h => `
         <p>
           <strong>${h.userId?.username || "Unknown User"}</strong>
-          completed 
-          "${h.flashcardId?.question || "Deleted Card"}"
-          on ${new Date(h.completedAt).toLocaleString()}
+          completed "${h.question || "Deleted flashcard"}"
         </p>
       `).join("");
 

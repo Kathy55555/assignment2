@@ -117,11 +117,13 @@ app.delete("/api/users/me", authMiddleware, async (req, res) => {
 
 app.post("/api/history", authMiddleware, async (req, res) => {
   try {
-    const { flashcardId } = req.body;
+    const card = await Flashcard.findById(req.body.flashcardId);
 
     const record = new StudyHistory({
       userId: req.user.userId,
-      flashcardId
+      flashcardId: req.body.flashcardId,
+      question: card?.question,
+      answer: card?.answer
     });
 
     await record.save();
