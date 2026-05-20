@@ -96,24 +96,34 @@ function getToken() {
 
 function applyRoleUI() {
   const role = getRole();
+
+  const manageBtn = document.getElementById("manageBtn");
+  const studyBtn = document.getElementById("studyBtn");
   const adminBtn = document.getElementById("adminBtn");
 
-  if (!adminBtn) return;
+  if (!manageBtn || !studyBtn || !adminBtn) return;
 
-  if (role !== "admin") {
-    adminBtn.style.display = "none";
-  } else {
+  if (role === "admin") {
+    manageBtn.style.display = "none";
+    studyBtn.style.display = "none";
     adminBtn.style.display = "inline-block";
+  } else {
+    manageBtn.style.display = "inline-block";
+    studyBtn.style.display = "inline-block";
+    adminBtn.style.display = "none"; 
   }
 }
 
 function setState(loggedIn) {
-  auth.classList.toggle("hidden", loggedIn);
-  app.classList.toggle("hidden", !loggedIn);
-
-  if (loggedIn) fetchCards();
+  if (loggedIn) {
+    auth.style.display = "none";
+    app.style.display = "block";
+    fetchCards();
+  } else {
+    auth.style.display = "block";
+    app.style.display = "none";
+  }
 }
-
 function initApp() {
   const token = localStorage.getItem("token");
 
@@ -127,6 +137,12 @@ function initApp() {
   app.classList.remove("hidden");
 
   applyRoleUI();
+
+  if (getRole() === "admin") {
+    switchMode("admin");
+  } else {
+    switchMode("manage");
+  }
 
   fetchCards();
 }
@@ -171,7 +187,7 @@ loginBtn.addEventListener("click", async () => {
   const data = await res.json();
 
   if (!res.ok) {
-    alert(data.message);
+    alert(data.message || "Login failed");
     return;
   }
 
@@ -180,15 +196,18 @@ loginBtn.addEventListener("click", async () => {
 
   applyRoleUI();
 
-  auth.style.display = "none";
-  app.style.display = "block";
+  setState(true);
 
-  resetModes();
-
-  currentMode = "manage";
-  manageBtn.classList.add("active-mode");
+  if (data.user.role === "admin") {
+    switchMode("admin");
+  } else {
+    switchMode("manage");
+  }
 
   bindAdminButtons();
+
+  loginEmail.value = "";
+  loginPassword.value = "";
 });
 
 //FETCH CARDS
@@ -208,8 +227,18 @@ async function fetchCards(search = "") {
 }
 
 function renderCurrentMode() {
-  if (currentMode === "manage") renderManage(cachedCards);
-  if (currentMode === "study") startStudyMode(cachedCards);
+  const role = getRole();
+
+  if (role === "admin") {
+    cardsContainer.innerHTML = ""; 
+    return; 
+  }
+
+  if (currentMode === "manage") {
+    renderManage(cachedCards);
+  } else if (currentMode === "study") {
+    startStudyMode(cachedCards);
+  }
 }
 
 //MANAGE MODE
@@ -324,20 +353,27 @@ function resetModes() {
 }
 
 function switchMode(mode) {
-  if (currentMode === mode) return; 
+  const role = getRole();
+
+  if (role === "admin" && mode !== "admin") {
+    alert("Admins can only access the admin panel");
+    return;
+  }
+
+  if (currentMode === mode) return;
 
   resetModes();
+
   currentMode = mode;
 
-  manageBtn.classList.toggle("active-mode", mode === "manage");
-  studyBtn.classList.toggle("active-mode", mode === "study");
-  adminBtn.classList.toggle("active-mode", mode === "admin");
+  document.getElementById("manageBtn").classList.toggle("active-mode", mode === "manage");
+  document.getElementById("studyBtn").classList.toggle("active-mode", mode === "study");
+  document.getElementById("adminBtn").classList.toggle("active-mode", mode === "admin");
 
-  adminPanel.style.display = mode === "admin" ? "flex" : "none";
+  document.getElementById("adminPanel").style.display = mode === "admin" ? "flex" : "none";
 
-  renderCurrentMode(); 
+  renderCurrentMode();
 }
-
 manageBtn.addEventListener("click", () => switchMode("manage"));
 
 studyBtn.addEventListener("click", () => {
