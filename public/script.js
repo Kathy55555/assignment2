@@ -353,7 +353,7 @@ function switchMode(mode) {
   fetchCards();
 }
 
-manageBtn.addEventListener("click", () => switchMode("manage"));
+manageBtn.addEventListener("click", () => switchMode("manage"));document.querySelector(".form").style.display = "flex";
 
 studyBtn.addEventListener("click", () => {
   app.classList.add("study-mode");
@@ -361,7 +361,7 @@ studyBtn.addEventListener("click", () => {
 });
 
 adminBtn.addEventListener("click", () => switchMode("admin"));
-
+document.querySelector(".form").style.display = "none";
 //STUDY MODE
 function startStudyMode(cards) {
   cardsContainer.innerHTML = "";
