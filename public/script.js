@@ -189,35 +189,27 @@ loginBtn.addEventListener("click", async () => {
   fetchCards();
   bindAdminButtons();
 });
+let cachedCards = [];
+
 //FETCH CARDS
 async function fetchCards(search = "") {
   const token = getToken();
-
-  if (!token) {
-    setState(false);
-    return;
-  }
+  if (!token) return setState(false);
 
   const res = await fetch(`/api/flashcards?search=${search}`, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
+    headers: { Authorization: "Bearer " + token }
   });
 
-  if (!res.ok) {
-    showAuth();
-    return;
-  }
+  if (!res.ok) return showAuth();
 
-  const cards = await res.json();
+  cachedCards = await res.json();
 
-  if (currentMode === "manage") {
-    renderManage(cards);
-  }
+  renderCurrentMode();
+}
 
-  if (currentMode === "study") {
-    startStudyMode(cards);
-  }
+function renderCurrentMode() {
+  if (currentMode === "manage") renderManage(cachedCards);
+  if (currentMode === "study") startStudyMode(cachedCards);
 }
 
 //MANAGE MODE
@@ -324,8 +316,6 @@ addBtn.addEventListener("click", async () => {
 });
 
 function resetModes() {
-  app.classList.remove("study-mode");
-
   manageBtn.classList.remove("active-mode");
   studyBtn.classList.remove("active-mode");
   adminBtn.classList.remove("active-mode");
@@ -334,6 +324,8 @@ function resetModes() {
 }
 
 function switchMode(mode) {
+  if (currentMode === mode) return; 
+
   resetModes();
   currentMode = mode;
 
@@ -341,27 +333,23 @@ function switchMode(mode) {
   studyBtn.classList.toggle("active-mode", mode === "study");
   adminBtn.classList.toggle("active-mode", mode === "admin");
 
-  cardsContainer.innerHTML = ""; 
+  adminPanel.style.display = mode === "admin" ? "flex" : "none";
 
-  if (mode === "admin") {
-    adminPanel.style.display = "flex";
-    bindAdminButtons();
-    return;
-  }
-
-  adminPanel.style.display = "none";
-  fetchCards();
+  renderCurrentMode(); 
 }
 
-manageBtn.addEventListener("click", () => switchMode("manage"));document.querySelector(".form").style.display = "flex";
+manageBtn.addEventListener("click", () => switchMode("manage"));
 
 studyBtn.addEventListener("click", () => {
-  app.classList.add("study-mode");
   switchMode("study");
 });
 
 adminBtn.addEventListener("click", () => switchMode("admin"));
-document.querySelector(".form").style.display = "none";
+
+function setFormVisible(visible) {
+  document.querySelector(".form").style.display = visible ? "flex" : "none";
+}
+
 //STUDY MODE
 function startStudyMode(cards) {
   cardsContainer.innerHTML = "";
