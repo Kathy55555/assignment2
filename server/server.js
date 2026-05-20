@@ -35,7 +35,17 @@ app.post("/api/flashcards", authMiddleware, async (req, res) => {
 
 // READ (only user’s cards)
 app.get("/api/flashcards", authMiddleware, async (req, res) => {
-  const cards = await Flashcard.find({ userId: req.user.userId });
+  const search = req.query.search || "";
+
+  const query = {
+    userId: req.user.userId,
+    $or: [
+      { question: { $regex: search, $options: "i" } },
+      { answer: { $regex: search, $options: "i" } }
+    ]
+  };
+
+  const cards = await Flashcard.find(query);
   res.json(cards);
 });
 

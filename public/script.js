@@ -23,6 +23,8 @@ const adminBtn = document.getElementById("adminBtn");
 const adminPanel = document.getElementById("adminPanel");
 const adminOutput = document.getElementById("adminOutput");
 
+const searchInput = document.getElementById("searchInput");
+
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
@@ -30,6 +32,12 @@ let studyCards = [];
 function getRole() {
   return localStorage.getItem("role");
 }
+
+// LIVE SEARCH BAR 
+searchInput.addEventListener("input", () => {
+  const value = searchInput.value.trim();
+  fetchCards(value);
+});
 
 function bindAdminButtons() {
   const usersBtn = document.getElementById("loadUsersBtn");
