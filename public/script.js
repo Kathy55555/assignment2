@@ -371,7 +371,10 @@ function switchMode(mode) {
   document.getElementById("adminBtn").classList.toggle("active-mode", mode === "admin");
 
   document.getElementById("adminPanel").style.display = mode === "admin" ? "flex" : "none";
-
+ 
+  searchInput.style.display = (mode === "admin") ? "none" : "block";
+  searchInput.value = "";
+  
   renderCurrentMode();
 }
 manageBtn.addEventListener("click", () => switchMode("manage"));
