@@ -28,6 +28,7 @@ const searchInput = document.getElementById("searchInput");
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
+let cachedCards = [];
 
 function getRole() {
   return localStorage.getItem("role");
@@ -186,10 +187,9 @@ loginBtn.addEventListener("click", async () => {
 
   currentMode = "manage";
   manageBtn.classList.add("active-mode");
-  fetchCards();
+
   bindAdminButtons();
 });
-let cachedCards = [];
 
 //FETCH CARDS
 async function fetchCards(search = "") {
