@@ -11,6 +11,8 @@ const User = require("./models/User");
 
 const { authMiddleware, adminOnly } = require("./middleware/auth");
 
+const StudyHistory = require("./models/StudyHistory");
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
@@ -70,9 +72,12 @@ app.delete("/api/flashcards/:id", authMiddleware, async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
-app.get("/api/admin/users", authMiddleware, adminOnly, async (req, res) => {
-  const users = await User.find({}, "-password");
-  res.json(users);
+app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
+  const history = await StudyHistory.find()
+    .populate("userId", "username email")
+    .populate("flashcardId", "question answer");
+
+  res.json(history);
 });
 
 app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
@@ -86,4 +91,48 @@ app.get("*", (req, res) => {
 
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
+});
+
+app.put("/api/users/me", authMiddleware, async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    const updated = await User.findByIdAndUpdate(
+      req.user.userId,
+      { username },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
+app.delete("/api/users/me", authMiddleware, async (req, res) => {
+  try {
+    await Flashcard.deleteMany({ userId: req.user.userId });
+    await User.findByIdAndDelete(req.user.userId);
+
+    res.json({ message: "Account deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Delete failed" });
+  }
+});
+
+app.post("/api/history", authMiddleware, async (req, res) => {
+  try {
+    const { flashcardId } = req.body;
+
+    const record = new StudyHistory({
+      userId: req.user.userId,
+      flashcardId
+    });
+
+    await record.save();
+
+    res.json(record);
+  } catch (err) {
+    res.status(500).json({ message: "History save failed" });
+  }
 });

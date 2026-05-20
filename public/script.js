@@ -67,7 +67,13 @@ usersBtn.onclick = async () => {
 
       adminOutput.innerHTML =
         "<h3>All Flashcards</h3>" +
-        data.map(c => `<p>${c.question} → ${c.answer}</p>`).join("");
+        data.map(h => `
+          <p>
+            <strong>${h.userId.username}</strong> completed 
+            "${h.flashcardId.question}" 
+            on ${new Date(h.completedAt).toLocaleString()}
+          </p>
+        `).join("");
     } catch (err) {
       adminOutput.innerHTML = "<p>Failed to load history</p>";
     }
@@ -391,8 +397,18 @@ function showCard() {
     div.classList.toggle("flipped");
   });
 
-  div.querySelector(".complete").addEventListener("click", (e) => {
+  div.querySelector(".complete").addEventListener("click", async (e) => {
     e.stopPropagation();
+
+    await fetch("/api/history", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken()
+      },
+      body: JSON.stringify({ flashcardId: card._id })
+    });
+
     studyCards.shift();
     showCard();
   });
