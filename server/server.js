@@ -80,11 +80,6 @@ app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
   res.json(history);
 });
 
-app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
-  const data = await Flashcard.find().populate("userId", "username email");
-  res.json(data);
-});
-
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

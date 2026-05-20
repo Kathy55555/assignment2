@@ -58,26 +58,38 @@ usersBtn.onclick = async () => {
 };
 
   historyBtn.onclick = async () => {
-    try {
-      const res = await fetch("/api/admin/history", {
-        headers: { Authorization: "Bearer " + getToken() }
-      });
+  try {
+    const res = await fetch("/api/admin/history", {
+      headers: { Authorization: "Bearer " + getToken() }
+    });
 
-      const data = await res.json();
-
-      adminOutput.innerHTML =
-        "<h3>All Flashcards</h3>" +
-        data.map(h => `
-          <p>
-            <strong>${h.userId.username}</strong> completed 
-            "${h.flashcardId.question}" 
-            on ${new Date(h.completedAt).toLocaleString()}
-          </p>
-        `).join("");
-    } catch (err) {
-      adminOutput.innerHTML = "<p>Failed to load history</p>";
+    if (!res.ok) {
+      adminOutput.innerHTML = "<p>Not authorized or error loading history</p>";
+      return;
     }
-  };
+
+    const data = await res.json();
+
+    if (!data.length) {
+      adminOutput.innerHTML = "<p>No history found</p>";
+      return;
+    }
+
+    adminOutput.innerHTML =
+      "<h3>Study History</h3>" +
+      data.map(h => `
+        <p>
+          <strong>${h.userId?.username || "Unknown User"}</strong>
+          completed 
+          "${h.flashcardId?.question || "Deleted Card"}"
+          on ${new Date(h.completedAt).toLocaleString()}
+        </p>
+      `).join("");
+
+  } catch (err) {
+    adminOutput.innerHTML = "<p>Failed to load history</p>";
+  }
+};
 }
 function getToken() {
   return localStorage.getItem("token");
@@ -201,8 +213,13 @@ async function fetchCards(search = "") {
 
   const cards = await res.json();
 
-  if (currentMode === "manage") renderManage(cards);
-  else startStudyMode(cards);
+  if (currentMode === "manage") {
+    renderManage(cards);
+  }
+
+  if (currentMode === "study") {
+    startStudyMode(cards);
+  }
 }
 
 //MANAGE MODE
@@ -318,41 +335,34 @@ function resetModes() {
   adminPanel.style.display = "none";
 }
 
-manageBtn.addEventListener("click", () => {
+function switchMode(mode) {
   resetModes();
+  currentMode = mode;
 
-  currentMode = "manage";
-  manageBtn.classList.add("active-mode");
+  manageBtn.classList.toggle("active-mode", mode === "manage");
+  studyBtn.classList.toggle("active-mode", mode === "study");
+  adminBtn.classList.toggle("active-mode", mode === "admin");
 
-  app.classList.remove("admin-mode"); 
+  cardsContainer.innerHTML = ""; 
+
+  if (mode === "admin") {
+    adminPanel.style.display = "flex";
+    bindAdminButtons();
+    return;
+  }
+
+  adminPanel.style.display = "none";
   fetchCards();
-});
+}
+
+manageBtn.addEventListener("click", () => switchMode("manage"));
 
 studyBtn.addEventListener("click", () => {
-  resetModes();
-
-  currentMode = "study";
-  studyBtn.classList.add("active-mode");
-
-  app.classList.remove("admin-mode"); 
   app.classList.add("study-mode");
-
-  fetchCards();
+  switchMode("study");
 });
 
-adminBtn.addEventListener("click", () => {
-  resetModes();
-
-  currentMode = "admin";
-  adminBtn.classList.add("active-mode");
-
-  app.classList.add("admin-mode");
-  cardsContainer.innerHTML = "";
-
-  adminPanel.style.display = "flex";
-
-  bindAdminButtons();
-});
+adminBtn.addEventListener("click", () => switchMode("admin"));
 
 //STUDY MODE
 function startStudyMode(cards) {
