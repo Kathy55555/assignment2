@@ -374,6 +374,8 @@ function switchMode(mode) {
  
   searchInput.style.display = (mode === "admin") ? "none" : "block";
   searchInput.value = "";
+
+  setFormVisible(mode !== "admin");
   
   renderCurrentMode();
 }
