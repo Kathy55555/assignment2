@@ -60,6 +60,7 @@ Features
 
 
 Folder Structure
+
 The project is organised into a public folder, which contains all frontend files including the HTML, JavaScript, and CSS used to build the user interface. The server folder contains all backend-related code and is structured into subfolders with models handling Flashcard, User and StudyHistory, routes handling auth, and middleware managing auth. The root directory also includes the package.json file for managing dependencies and the node_modules folder which is automatically generated when installing packages alongside database exports for flashcards and users.
 
 
