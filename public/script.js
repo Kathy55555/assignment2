@@ -34,7 +34,7 @@ function getRole() {
   return localStorage.getItem("role");
 }
 
-// LIVE SEARCH BAR 
+// Live search input
 searchInput.addEventListener("input", () => {
   if (currentMode !== "manage") return; 
 
@@ -42,6 +42,7 @@ searchInput.addEventListener("input", () => {
   fetchCards(value);
 });
 
+// Admin button logic
 function bindAdminButtons() {
   const usersBtn = document.getElementById("loadUsersBtn");
   const historyBtn = document.getElementById("loadHistoryBtn");
@@ -53,6 +54,7 @@ function bindAdminButtons() {
 
   console.log("Admin buttons bound");
 
+  // Load all user button
   usersBtn.onclick = async () => {
     try {
       const res = await fetch("/api/admin/users", {
@@ -75,6 +77,7 @@ function bindAdminButtons() {
     }
   };
 
+  // Load all study history
   historyBtn.onclick = async () => {
     try {
       const res = await fetch("/api/admin/history", {
@@ -111,6 +114,7 @@ function getToken() {
   return localStorage.getItem("token");
 }
 
+// UI changes depending on role
 function applyRoleUI() {
   const role = getRole();
 
@@ -131,6 +135,7 @@ function applyRoleUI() {
   }
 }
 
+// Set UI state when user logs in
 function setState(loggedIn) {
   if (loggedIn) {
     auth.style.display = "none";
@@ -141,6 +146,8 @@ function setState(loggedIn) {
     app.style.display = "none";
   }
 }
+
+// Initialise app
 function initApp() {
   const token = localStorage.getItem("token");
 
@@ -168,7 +175,7 @@ if (getRole() === "admin") {
 
 document.addEventListener("DOMContentLoaded", initApp);
 
-//REGISTER
+// User registration
 registerBtn.addEventListener("click", async () => {
   const res = await fetch("/api/auth/register", {
     method: "POST",
@@ -192,7 +199,7 @@ registerBtn.addEventListener("click", async () => {
   alert("Registered successfully");
 });
 
-//LOGIN
+// User login
 loginBtn.addEventListener("click", async () => {
   const res = await fetch("/api/auth/login", {
     method: "POST",
@@ -228,6 +235,8 @@ loginBtn.addEventListener("click", async () => {
   loginEmail.value = "";
   loginPassword.value = "";
 });
+
+// Toggle search bar visibility
 function enableSearch(enable) {
   if (enable) {
     searchInput.style.display = "block";
@@ -236,7 +245,7 @@ function enableSearch(enable) {
     searchInput.value = "";
   }
 }
-//FETCH CARDS
+// Fetch cards
 async function fetchCards(search = "") {
   const token = getToken();
   if (!token) return setState(false);
@@ -252,6 +261,7 @@ async function fetchCards(search = "") {
   renderCurrentMode();
 }
 
+// Render UI 
 function renderCurrentMode() {
   const role = getRole();
 
@@ -267,7 +277,7 @@ function renderCurrentMode() {
   }
 }
 
-//MANAGE MODE
+// Render manage mode
 function renderManage(cards) {
   cardsContainer.innerHTML = "";
 cardsContainer.style.display = "";
@@ -330,7 +340,7 @@ cardsContainer.style.minHeight = "";
   });
 }
 
-//ADD / UPDATE
+//ADD or UPDATE flashcards
 addBtn.addEventListener("click", async () => {
   const question = questionInput.value.trim();
   const answer = answerInput.value.trim();
@@ -381,6 +391,7 @@ function resetModes() {
   adminPanel.style.display = "none";
 }
 
+// Switch between manage/study or admin
 function switchMode(mode) {
   const role = getRole();
 
@@ -411,6 +422,7 @@ function switchMode(mode) {
     renderCurrentMode();
   }
 }
+
 manageBtn.addEventListener("click", () => switchMode("manage"));
 
 studyBtn.addEventListener("click", () => {
@@ -419,11 +431,12 @@ studyBtn.addEventListener("click", () => {
 
 adminBtn.addEventListener("click", () => switchMode("admin"));
 
+// Show or hide flashcard
 function setFormVisible(visible) {
   document.querySelector(".form").style.display = visible ? "flex" : "none";
 }
 
-//STUDY MODE
+// STUDY MODE
 function startStudyMode(cards) {
   cardsContainer.innerHTML = "";
 
@@ -437,6 +450,7 @@ function startStudyMode(cards) {
   showCard();
 }
 
+// Show current study card
 function showCard() {
   cardsContainer.innerHTML = "";
 

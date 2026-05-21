@@ -7,7 +7,7 @@ const router = express.Router();
 
 const JWT_SECRET = "your_secret_key"; 
 
-// register
+// Register
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;

@@ -23,7 +23,7 @@ mongoose.connect("mongodb://127.0.0.1:27017/flashcards")
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error(err));
 
-// CREATE
+// Create flashcards
 app.post("/api/flashcards", authMiddleware, async (req, res) => {
   const card = new Flashcard({
     userId: req.user.userId,
@@ -35,7 +35,7 @@ app.post("/api/flashcards", authMiddleware, async (req, res) => {
   res.json(card);
 });
 
-// READ (only user’s cards)
+// Read flashcards 
 app.get("/api/flashcards", authMiddleware, async (req, res) => {
   const search = req.query.search || "";
   const role = req.user.role;
@@ -47,6 +47,7 @@ app.get("/api/flashcards", authMiddleware, async (req, res) => {
     query.userId = userId;
   }
 
+  // Live search filter
   if (search) {
     query.$or = [
       { question: { $regex: search, $options: "i" } },
@@ -58,7 +59,7 @@ app.get("/api/flashcards", authMiddleware, async (req, res) => {
   res.json(cards);
 });
 
-// UPDATE
+// Update flashcard
 app.put("/api/flashcards/:id", authMiddleware, async (req, res) => {
   const updated = await Flashcard.findOneAndUpdate(
     { _id: req.params.id, userId: req.user.userId },
@@ -69,7 +70,7 @@ app.put("/api/flashcards/:id", authMiddleware, async (req, res) => {
   res.json(updated);
 });
 
-// DELETE
+// Delete flashcard
 app.delete("/api/flashcards/:id", authMiddleware, async (req, res) => {
   await Flashcard.findOneAndDelete({
     _id: req.params.id,
@@ -79,6 +80,7 @@ app.delete("/api/flashcards/:id", authMiddleware, async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
+// Get users (admin only)
 app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
   const history = await StudyHistory.find()
     .populate("userId", "username email")
@@ -87,6 +89,7 @@ app.get("/api/admin/history", authMiddleware, adminOnly, async (req, res) => {
   res.json(history);
 });
 
+// Get study history (admin only)
 app.get("/api/admin/users", authMiddleware, adminOnly, async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -97,41 +100,7 @@ app.get("/api/admin/users", authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/index.html"));
-});
-
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
-
-app.put("/api/users/me", authMiddleware, async (req, res) => {
-  try {
-    const { username } = req.body;
-
-    const updated = await User.findByIdAndUpdate(
-      req.user.userId,
-      { username },
-      { new: true }
-    );
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: "Update failed" });
-  }
-});
-
-app.delete("/api/users/me", authMiddleware, async (req, res) => {
-  try {
-    await Flashcard.deleteMany({ userId: req.user.userId });
-    await User.findByIdAndDelete(req.user.userId);
-
-    res.json({ message: "Account deleted" });
-  } catch (err) {
-    res.status(500).json({ message: "Delete failed" });
-  }
-});
-
+// Study history
 app.post("/api/history", authMiddleware, async (req, res) => {
   try {
     const card = await Flashcard.findById(req.body.flashcardId);
@@ -149,4 +118,14 @@ app.post("/api/history", authMiddleware, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "History save failed" });
   }
+});
+
+// Frontend route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
+});
+
+// Start server
+app.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
 });
