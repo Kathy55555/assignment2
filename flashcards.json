@@ -1,0 +1,33 @@
+[{
+  "_id": {
+    "$oid": "6a0c7b8a3e090bca5deb58ce"
+  },
+  "userId": {
+    "$oid": "6a0c55d965fab37a894a0635"
+  },
+  "question": "hi",
+  "answer": "bye",
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a0c7bbb3e090bca5deb58d8"
+  },
+  "userId": {
+    "$oid": "6a0c55d965fab37a894a0635"
+  },
+  "question": "why",
+  "answer": "no",
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "6a0eb0f08575e5edd11e490a"
+  },
+  "userId": {
+    "$oid": "6a0c55d965fab37a894a0635"
+  },
+  "question": "today",
+  "answer": "tomorrow",
+  "__v": 0
+}]

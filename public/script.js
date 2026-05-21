@@ -1,3 +1,16 @@
+const auth = document.getElementById("auth");
+const app = document.getElementById("app");
+
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+
+const regUsername = document.getElementById("regUsername");
+const regEmail = document.getElementById("regEmail");
+const regPassword = document.getElementById("regPassword");
+
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+
 const cardsContainer = document.getElementById("cards");
 const questionInput = document.getElementById("question");
 const answerInput = document.getElementById("answer");
@@ -5,37 +18,280 @@ const addBtn = document.getElementById("addBtn");
 
 const manageBtn = document.getElementById("manageBtn");
 const studyBtn = document.getElementById("studyBtn");
-const progressDisplay = document.getElementById("progress");
 
-const container = document.querySelector(".container");
+const adminBtn = document.getElementById("adminBtn");
+const adminPanel = document.getElementById("adminPanel");
+const adminOutput = document.getElementById("adminOutput");
+
+const searchInput = document.getElementById("searchInput");
 
 let editingId = null;
 let currentMode = "manage";
 let studyCards = [];
+let cachedCards = [];
 
-async function fetchCards() {
-  const res = await fetch("/api/flashcards");
-  const cards = await res.json();
+function getRole() {
+  return localStorage.getItem("role");
+}
 
-  if (currentMode === "manage") {
-    renderManage(cards);
+// Live search input
+searchInput.addEventListener("input", () => {
+  if (currentMode !== "manage") return; 
+
+  const value = searchInput.value.trim();
+  fetchCards(value);
+});
+
+// Admin button logic
+function bindAdminButtons() {
+  const usersBtn = document.getElementById("loadUsersBtn");
+  const historyBtn = document.getElementById("loadHistoryBtn");
+
+  if (!usersBtn || !historyBtn) {
+    console.log("Admin buttons not found");
+    return;
+  }
+
+  console.log("Admin buttons bound");
+
+  // Load all user button
+  usersBtn.onclick = async () => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: "Bearer " + getToken() }
+      });
+
+      if (!res.ok) {
+        adminOutput.innerHTML = "<p>Failed to load users</p>";
+        return;
+      }
+
+      const data = await res.json();
+
+      adminOutput.innerHTML =
+        "<h3>Users</h3>" +
+        data.map(u => `<p>${u.username} - ${u.email}</p>`).join("");
+
+    } catch (err) {
+      adminOutput.innerHTML = "<p>Error loading users</p>";
+    }
+  };
+
+  // Load all study history
+  historyBtn.onclick = async () => {
+    try {
+      const res = await fetch("/api/admin/history", {
+        headers: { Authorization: "Bearer " + getToken() }
+      });
+
+      if (!res.ok) {
+        adminOutput.innerHTML = "<p>Not authorized or error loading history</p>";
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!data.length) {
+        adminOutput.innerHTML = "<p>No history found</p>";
+        return;
+      }
+
+      adminOutput.innerHTML =
+        "<h3>All Flashcards Completed</h3>" +
+        data.map(h => `
+          <p>
+            <strong>${h.userId?.username || "Unknown User"}</strong>
+            completed "${h.question || "Deleted flashcard"}"
+          </p>
+        `).join("");
+
+    } catch (err) {
+      adminOutput.innerHTML = "<p>Failed to load history</p>";
+    }
+  };
+}
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+// UI changes depending on role
+function applyRoleUI() {
+  const role = getRole();
+
+  const manageBtn = document.getElementById("manageBtn");
+  const studyBtn = document.getElementById("studyBtn");
+  const adminBtn = document.getElementById("adminBtn");
+
+  if (!manageBtn || !studyBtn || !adminBtn) return;
+
+  if (role === "admin") {
+    manageBtn.style.display = "none";
+    studyBtn.style.display = "none";
+    adminBtn.style.display = "inline-block";
   } else {
-    startStudyMode(cards);
+    manageBtn.style.display = "inline-block";
+    studyBtn.style.display = "inline-block";
+    adminBtn.style.display = "none"; 
   }
 }
 
-// Manage mode
+// Set UI state when user logs in
+function setState(loggedIn) {
+  if (loggedIn) {
+    auth.style.display = "none";
+    app.style.display = "block";
+    fetchCards();
+  } else {
+    auth.style.display = "block";
+    app.style.display = "none";
+  }
+}
+
+// Initialise app
+function initApp() {
+  const token = localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === "null") {
+    auth.classList.remove("hidden");
+    app.classList.add("hidden");
+    return;
+  }
+
+  auth.classList.add("hidden");
+  app.classList.remove("hidden");
+
+  applyRoleUI();
+
+currentMode = "";
+
+if (getRole() === "admin") {
+  switchMode("admin");
+} else {
+  switchMode("manage");
+}
+
+  fetchCards();
+}
+
+document.addEventListener("DOMContentLoaded", initApp);
+
+// User registration
+registerBtn.addEventListener("click", async () => {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: regUsername.value,
+      email: regEmail.value,
+      password: regPassword.value
+    })
+  });
+
+  const data = await res.json();
+
+  console.log("REGISTER:", data);
+
+  if (!res.ok) {
+    alert(data.message || "Register failed");
+    return;
+  }
+
+  alert("Registered successfully");
+});
+
+// User login
+loginBtn.addEventListener("click", async () => {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: loginEmail.value,
+      password: loginPassword.value
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.message || "Login failed");
+    return;
+  }
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("role", data.user.role);
+
+  applyRoleUI();
+
+  setState(true);
+
+  if (data.user.role === "admin") {
+    switchMode("admin");
+  } else {
+    switchMode("manage");
+  }
+
+  bindAdminButtons();
+
+  loginEmail.value = "";
+  loginPassword.value = "";
+});
+
+// Toggle search bar visibility
+function enableSearch(enable) {
+  if (enable) {
+    searchInput.style.display = "block";
+  } else {
+    searchInput.style.display = "none";
+    searchInput.value = "";
+  }
+}
+// Fetch cards
+async function fetchCards(search = "") {
+  const token = getToken();
+  if (!token) return setState(false);
+
+  const res = await fetch(`/api/flashcards?search=${search}`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  if (!res.ok) return showAuth();
+
+  cachedCards = await res.json();
+
+  renderCurrentMode();
+}
+
+// Render UI 
+function renderCurrentMode() {
+  const role = getRole();
+
+  if (role === "admin") {
+    cardsContainer.innerHTML = ""; 
+    return; 
+  }
+
+  if (currentMode === "manage") {
+    renderManage(cachedCards);
+  } else if (currentMode === "study") {
+    startStudyMode(cachedCards);
+  }
+}
+
+// Render manage mode
 function renderManage(cards) {
   cardsContainer.innerHTML = "";
-  progressDisplay.textContent = "";
+cardsContainer.style.display = "";
+cardsContainer.style.placeItems = "";
+cardsContainer.style.minHeight = "";
+  cardsContainer.classList.remove("empty");
+  if (!cards.length) {
+    cardsContainer.classList.add("empty");
 
-if (cards.length === 0) {
-  cardsContainer.classList.add("no-cards"); 
-  cardsContainer.innerHTML = `<div class="center-message">No cards.</div>`;
-  return;
-} else {
-  cardsContainer.classList.remove("no-cards"); 
-}
+    cardsContainer.innerHTML = `
+      <div class="center-message">No cards</div>
+    `;
+    return;
+  }
 
   cards.forEach(card => {
     const wrapper = document.createElement("div");
@@ -53,17 +309,27 @@ if (cards.length === 0) {
     `;
 
     wrapper.addEventListener("click", e => {
-      if (e.target.tagName !== "BUTTON") wrapper.classList.toggle("flipped");
+      if (e.target.tagName !== "BUTTON") {
+        wrapper.classList.toggle("flipped");
+      }
     });
 
     wrapper.querySelector(".delete-btn").addEventListener("click", async e => {
       e.stopPropagation();
-      await fetch(`/api/flashcards/${card._id}`, { method: "DELETE" });
+
+      await fetch(`/api/flashcards/${card._id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + getToken()
+        }
+      });
+
       fetchCards();
     });
 
     wrapper.querySelector(".edit-btn").addEventListener("click", e => {
       e.stopPropagation();
+
       questionInput.value = card.question;
       answerInput.value = card.answer;
       editingId = card._id;
@@ -74,100 +340,161 @@ if (cards.length === 0) {
   });
 }
 
-//add or update card
+//ADD or UPDATE flashcards
 addBtn.addEventListener("click", async () => {
   const question = questionInput.value.trim();
   const answer = answerInput.value.trim();
 
-  if (!question || !answer) return alert("Both fields are required");
+  if (!question || !answer) return alert("Fill both fields");
+
+  const token = getToken();
+
+  if (!token) {
+    setState(false);
+    return;
+  }
 
   if (editingId) {
     await fetch(`/api/flashcards/${editingId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ question, answer })
     });
+
     editingId = null;
     addBtn.textContent = "Add Flashcard";
   } else {
     await fetch("/api/flashcards", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ question, answer })
     });
   }
 
   questionInput.value = "";
   answerInput.value = "";
+
   fetchCards();
 });
 
-//Study mode
+function resetModes() {
+  manageBtn.classList.remove("active-mode");
+  studyBtn.classList.remove("active-mode");
+  adminBtn.classList.remove("active-mode");
+
+  adminPanel.style.display = "none";
+}
+
+// Switch between manage/study or admin
+function switchMode(mode) {
+  const role = getRole();
+
+  if (role === "admin" && mode !== "admin") {
+    alert("Admins can only access the admin panel");
+    return;
+  }
+
+  resetModes();
+
+  currentMode = mode;
+
+  manageBtn.classList.toggle("active-mode", mode === "manage");
+  studyBtn.classList.toggle("active-mode", mode === "study");
+  adminBtn.classList.toggle("active-mode", mode === "admin");
+  app.classList.toggle("study-mode", mode === "study");
+
+  adminPanel.style.display = mode === "admin" ? "flex" : "none";
+
+  enableSearch(mode === "manage");
+
+  setFormVisible(mode === "manage");
+
+  if (mode === "admin") {
+    cardsContainer.innerHTML = "";
+    bindAdminButtons();
+  } else {
+    renderCurrentMode();
+  }
+}
+
+manageBtn.addEventListener("click", () => switchMode("manage"));
+
+studyBtn.addEventListener("click", () => {
+  switchMode("study");
+});
+
+adminBtn.addEventListener("click", () => switchMode("admin"));
+
+// Show or hide flashcard
+function setFormVisible(visible) {
+  document.querySelector(".form").style.display = visible ? "flex" : "none";
+}
+
+// STUDY MODE
 function startStudyMode(cards) {
   cardsContainer.innerHTML = "";
-  progressDisplay.textContent = "";
 
-  if (cards.length === 0) {
-    cardsContainer.innerHTML = `<div class="center-message">No cards.</div>`;
+  if (!cards.length) {
+    cardsContainer.classList.add("no-cards");
+    cardsContainer.innerHTML = `<div class="center-message">No cards</div>`;
     return;
   }
 
   studyCards = [...cards];
-  showStudyCard();
+  showCard();
 }
 
-function showStudyCard() {
+// Show current study card
+function showCard() {
   cardsContainer.innerHTML = "";
 
   if (studyCards.length === 0) {
-    cardsContainer.innerHTML = `<div class="center-message">🎉 All cards completed!</div>`;
+    const msg = document.createElement("div");
+    msg.className = "center-message";
+    msg.textContent = "All cards completed!";
+    cardsContainer.appendChild(msg);
     return;
   }
 
-  progressDisplay.textContent = `${studyCards.length} card(s) remaining`;
-
   const card = studyCards[0];
-  const wrapper = document.createElement("div");
-  wrapper.className = "card";
 
-  wrapper.innerHTML = `
+  const div = document.createElement("div");
+  div.className = "card study-card";
+
+  div.innerHTML = `
     <div class="card-inner">
       <div class="card-front">${card.question}</div>
       <div class="card-back">${card.answer}</div>
     </div>
-    <div class="study-actions">
-      <button class="complete-btn">Mark as Known ✓</button>
-    </div>
+    <button class="complete">Done</button>
   `;
 
-  wrapper.addEventListener("click", e => {
-    if (e.target.tagName !== "BUTTON") wrapper.classList.toggle("flipped");
+  div.addEventListener("click", (e) => {
+    if (e.target.classList.contains("complete")) return;
+    div.classList.toggle("flipped");
   });
 
-  wrapper.querySelector(".complete-btn").addEventListener("click", e => {
+  div.querySelector(".complete").addEventListener("click", async (e) => {
     e.stopPropagation();
+
+    await fetch("/api/history", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken()
+      },
+      body: JSON.stringify({ flashcardId: card._id })
+    });
+
     studyCards.shift();
-    showStudyCard();
+    showCard();
   });
 
-  cardsContainer.appendChild(wrapper);
+  cardsContainer.appendChild(div);
 }
-
-// Switch modes between study and manage
-manageBtn.addEventListener("click", () => {
-  currentMode = "manage";
-  container.classList.remove("study-mode");
-  manageBtn.classList.add("active-mode");
-  studyBtn.classList.remove("active-mode");
-  fetchCards();
-});
-
-studyBtn.addEventListener("click", () => {
-  currentMode = "study";
-  container.classList.add("study-mode");
-  studyBtn.classList.add("active-mode");
-  manageBtn.classList.remove("active-mode");
-  fetchCards();
-});
-
-fetchCards();

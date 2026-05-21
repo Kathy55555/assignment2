@@ -2,19 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flashcard Learning App</title>
+  <title>Flashcard App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+
+  <div id="auth" class="auth-box">
+
+    <h2>Login</h2>
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+
+
+    <h2>Register</h2>
+    <input id="regUsername" placeholder="Username">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+    <button id="registerBtn">Register</button>
+
+  </div>
+
+  <div id="app" class="container" style="display:none;">
+
     <h1>Flashcard Learning App</h1>
 
     <div class="mode-switch">
       <button id="manageBtn" class="active-mode">Manage</button>
       <button id="studyBtn">Study</button>
+      <button id="adminBtn">Admin</button>
     </div>
 
     <div id="progress" class="progress"></div>
+
+    <input id="searchInput" placeholder="Search flashcards..." class="search-bar">
+
+    <div id="adminPanel" class="hidden-panel">
+      <div class="admin-box">
+        <h2>Admin Dashboard</h2>
+
+        <div class="admin-buttons">
+          <button id="loadUsersBtn">View Users</button>
+          <button id="loadHistoryBtn">View Flashcards</button>
+        </div>
+
+        <div id="adminOutput"></div>
+      </div>
+    </div>
 
     <div class="form">
       <input id="question" placeholder="Enter question">
@@ -23,6 +57,7 @@
     </div>
 
     <div id="cards" class="cards"></div>
+
   </div>
 
   <script src="script.js"></script>
