@@ -402,7 +402,7 @@ function switchMode(mode) {
 
   enableSearch(mode === "manage");
 
-  setFormVisible(mode !== "admin");
+  setFormVisible(mode === "manage");
 
   if (mode === "admin") {
     cardsContainer.innerHTML = "";
