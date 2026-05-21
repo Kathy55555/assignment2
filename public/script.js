@@ -36,6 +36,8 @@ function getRole() {
 
 // LIVE SEARCH BAR 
 searchInput.addEventListener("input", () => {
+  if (currentMode !== "manage") return; 
+
   const value = searchInput.value.trim();
   fetchCards(value);
 });
@@ -226,7 +228,14 @@ loginBtn.addEventListener("click", async () => {
   loginEmail.value = "";
   loginPassword.value = "";
 });
-
+function enableSearch(enable) {
+  if (enable) {
+    searchInput.style.display = "block";
+  } else {
+    searchInput.style.display = "none";
+    searchInput.value = "";
+  }
+}
 //FETCH CARDS
 async function fetchCards(search = "") {
   const token = getToken();
@@ -391,8 +400,7 @@ function switchMode(mode) {
 
   adminPanel.style.display = mode === "admin" ? "flex" : "none";
 
-  searchInput.style.display = mode === "admin" ? "none" : "block";
-  searchInput.value = "";
+  enableSearch(mode === "manage");
 
   setFormVisible(mode !== "admin");
 
