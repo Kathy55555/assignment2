@@ -1,10 +1,12 @@
-Flashcard Learning App - Individual 
+Flashcard Learning App (Individual)
 
 Project Summary
 
 The Flashcard Learning App is a full-stack single-page application (SPA) designed to help users create, manage, and study flashcards efficiently. It includes user authentication, role-based access control (user/admin), live search functionality, and a study tracking system.
 
 The system demonstrates full CRUD operations on multiple entities and follows a modern client-server architecture using Node.js, Express, and MongoDB.
+
+
 
 Technical Stack
 Frontend
@@ -58,29 +60,10 @@ Features
 
 
 Folder Structure
-project-root/
-│
-├── public/
-│   ├── index.html
-│   ├── script.js
-│   └── style.css
-│
-├── server/
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Flashcard.js
-│   │   └── StudyHistory.js
-│   │
-│   ├── routes/
-│   │   └── auth.js
-│   │
-│   ├── middleware/
-│   │   └── auth.js
-│   │
-│   └── server.js
-│
-├── package.json
-└── node_modules/
+The project is organised into a public folder, which contains all frontend files including the HTML, JavaScript, and CSS used to build the user interface. The server folder contains all backend-related code and is structured into subfolders with models handling Flashcard, User and StudyHistory, routes handling auth, and middleware managing auth. The root directory also includes the package.json file for managing dependencies and the node_modules folder which is automatically generated when installing packages alongside database exports for flashcards and users.
+
+
+
 
 Setup Instructions
 
