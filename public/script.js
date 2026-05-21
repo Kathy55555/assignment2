@@ -44,51 +44,66 @@ function bindAdminButtons() {
   const usersBtn = document.getElementById("loadUsersBtn");
   const historyBtn = document.getElementById("loadHistoryBtn");
 
-  if (!usersBtn || !historyBtn) return;
+  if (!usersBtn || !historyBtn) {
+    console.log("Admin buttons not found");
+    return;
+  }
 
-usersBtn.onclick = async () => {
-  const res = await fetch("/api/admin/users", {
-    headers: { Authorization: "Bearer " + getToken() }
-  });
+  console.log("Admin buttons bound");
 
-  const data = await res.json();
+  usersBtn.onclick = async () => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: "Bearer " + getToken() }
+      });
 
-  adminOutput.innerHTML =
-    "<h3>Users</h3>" +
-    data.map(u => `<p>${u.username} - ${u.email}</p>`).join("");
-};
+      if (!res.ok) {
+        adminOutput.innerHTML = "<p>Failed to load users</p>";
+        return;
+      }
+
+      const data = await res.json();
+
+      adminOutput.innerHTML =
+        "<h3>Users</h3>" +
+        data.map(u => `<p>${u.username} - ${u.email}</p>`).join("");
+
+    } catch (err) {
+      adminOutput.innerHTML = "<p>Error loading users</p>";
+    }
+  };
 
   historyBtn.onclick = async () => {
-  try {
-    const res = await fetch("/api/admin/history", {
-      headers: { Authorization: "Bearer " + getToken() }
-    });
+    try {
+      const res = await fetch("/api/admin/history", {
+        headers: { Authorization: "Bearer " + getToken() }
+      });
 
-    if (!res.ok) {
-      adminOutput.innerHTML = "<p>Not authorized or error loading history</p>";
-      return;
+      if (!res.ok) {
+        adminOutput.innerHTML = "<p>Not authorized or error loading history</p>";
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!data.length) {
+        adminOutput.innerHTML = "<p>No history found</p>";
+        return;
+      }
+
+      adminOutput.innerHTML =
+        "<h3>All Flashcards Completed</h3>" +
+        data.map(h => `
+          <p>
+            <strong>${h.userId?.username || "Unknown User"}</strong>
+            completed "${h.question || "Deleted flashcard"}"
+          </p>
+        `).join("");
+
+    } catch (err) {
+      adminOutput.innerHTML = "<p>Failed to load history</p>";
     }
-
-    const data = await res.json();
-
-    if (!data.length) {
-      adminOutput.innerHTML = "<p>No history found</p>";
-      return;
-    }
-
-    adminOutput.innerHTML =
-      "<h3>All Flashcards Completed</h3>" +
-      data.map(h => `
-        <p>
-          <strong>${h.userId?.username || "Unknown User"}</strong>
-          completed "${h.question || "Deleted flashcard"}"
-        </p>
-      `).join("");
-
-  } catch (err) {
-    adminOutput.innerHTML = "<p>Failed to load history</p>";
-  }
-};
+  };
 }
 function getToken() {
   return localStorage.getItem("token");
@@ -138,11 +153,13 @@ function initApp() {
 
   applyRoleUI();
 
-  if (getRole() === "admin") {
-    switchMode("admin");
-  } else {
-    switchMode("manage");
-  }
+currentMode = "";
+
+if (getRole() === "admin") {
+  switchMode("admin");
+} else {
+  switchMode("manage");
+}
 
   fetchCards();
 }
@@ -360,24 +377,27 @@ function switchMode(mode) {
     return;
   }
 
-  if (currentMode === mode) return;
-
   resetModes();
 
   currentMode = mode;
 
-  document.getElementById("manageBtn").classList.toggle("active-mode", mode === "manage");
-  document.getElementById("studyBtn").classList.toggle("active-mode", mode === "study");
-  document.getElementById("adminBtn").classList.toggle("active-mode", mode === "admin");
+  manageBtn.classList.toggle("active-mode", mode === "manage");
+  studyBtn.classList.toggle("active-mode", mode === "study");
+  adminBtn.classList.toggle("active-mode", mode === "admin");
 
-  document.getElementById("adminPanel").style.display = mode === "admin" ? "flex" : "none";
- 
-  searchInput.style.display = (mode === "admin") ? "none" : "block";
+  adminPanel.style.display = mode === "admin" ? "flex" : "none";
+
+  searchInput.style.display = mode === "admin" ? "none" : "block";
   searchInput.value = "";
 
   setFormVisible(mode !== "admin");
-  
-  renderCurrentMode();
+
+  if (mode === "admin") {
+    cardsContainer.innerHTML = "";
+    bindAdminButtons();
+  } else {
+    renderCurrentMode();
+  }
 }
 manageBtn.addEventListener("click", () => switchMode("manage"));
 
