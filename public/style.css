@@ -224,7 +224,19 @@ html, body {
   align-items: center;
   margin-top: 20px;
 }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
 
+.study-mode .cards {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: auto;
+  padding-top: 60px; 
+}
 .admin-box {
   background: white;
   padding: 30px;

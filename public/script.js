@@ -261,6 +261,9 @@ function renderCurrentMode() {
 //MANAGE MODE
 function renderManage(cards) {
   cardsContainer.innerHTML = "";
+cardsContainer.style.display = "";
+cardsContainer.style.placeItems = "";
+cardsContainer.style.minHeight = "";
   cardsContainer.classList.remove("empty");
   if (!cards.length) {
     cardsContainer.classList.add("empty");
@@ -384,6 +387,7 @@ function switchMode(mode) {
   manageBtn.classList.toggle("active-mode", mode === "manage");
   studyBtn.classList.toggle("active-mode", mode === "study");
   adminBtn.classList.toggle("active-mode", mode === "admin");
+  app.classList.toggle("study-mode", mode === "study");
 
   adminPanel.style.display = mode === "admin" ? "flex" : "none";
 
@@ -439,7 +443,7 @@ function showCard() {
   const card = studyCards[0];
 
   const div = document.createElement("div");
-  div.className = "card";
+  div.className = "card study-card";
 
   div.innerHTML = `
     <div class="card-inner">
